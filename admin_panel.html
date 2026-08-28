@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Yönetim Paneli</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #f0f2f5; }
+        .sidebar { width: 250px; background: #2f3542; color: white; display: flex; flex-direction: column; flex-shrink:0; }
+        .sidebar-header { padding: 30px 20px; text-align: center; font-size: 20px; font-weight: bold; border-bottom: 1px solid #57606f; background: #2f3542; color: #00cec9; letter-spacing: 1px; text-transform: uppercase; }
+        .menu a { padding: 18px 25px; color: #ced6e0; text-decoration: none; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #57606f; transition: 0.3s; font-size: 15px; }
+        .menu a:hover { background: #57606f; color: white; padding-left: 30px; }
+        .menu a.active { background: #00cec9; color: #2f3542; font-weight: bold; border-left: 6px solid #dfe4ea; }
+        .logout { margin-top: auto; background: #ff4757; color: white; text-align: center; padding: 20px; text-decoration: none; font-weight: bold; letter-spacing: 1px; }
+        .content { flex: 1; padding: 40px; overflow-y: auto; }
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); text-align: center; border-bottom: 5px solid #00cec9; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .card h3 { margin: 0; color: #a4b0be; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .card p { font-size: 36px; font-weight: bold; margin: 15px 0 0; color: #2f3542; }
+        .box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .box-header { border-bottom: 2px solid #f1f2f6; padding-bottom: 20px; margin-bottom: 20px; font-size: 18px; font-weight: bold; color: #2f3542; display: flex; align-items: center; gap: 10px; }
+        .forms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .mini-form { display: flex; flex-direction: column; gap: 15px; }
+        .mini-form input, .mini-form select { padding: 12px; border: 1px solid #dfe4ea; border-radius: 8px; font-size: 14px; background: #f8f9fa; }
+        .btn-add { background: #00cec9; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .btn-add:hover { background: #01a3a4; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; background: #f1f2f6; color: #747d8c; font-size: 13px; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f1f2f6; color: #2f3542; font-size: 14px; }
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .b-wait { background: #fff2cc; color: #ffa502; }
+        .b-done { background: #c8f7dc; color: #2ecc71; }
+        .btn-sm { padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; color: white; display: inline-block; }
+        .red { background: #ff4757; }
+        .red:hover { background: #ff6b81; }
+        .blue { background: #1e90ff; }
+        .blue:hover { background: #3742fa; }
+        .chart-container { height: 400px; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">YÖNETİCİ PANELİ</div>
+        <div class="menu">
+            <a href="/admin?sayfa=ozet" class="{% if aktif_sayfa == 'ozet' %}active{% endif %}">📊 Özet Ekranı</a>
+            <a href="/admin?sayfa=ekle" class="{% if aktif_sayfa == 'ekle' %}active{% endif %}">⚙️ Ekleme İşlemleri</a>
+            <a href="/admin?sayfa=randevular" class="{% if aktif_sayfa == 'randevular' %}active{% endif %}">📅 Randevular</a>
+            <a href="/admin?sayfa=yorumlar" class="{% if aktif_sayfa == 'yorumlar' %}active{% endif %}">💬 Yorumlar</a>
+            <a href="/" style="margin-top: 20px; border-top: 1px solid #57606f;">🌍 Siteye Git</a>
+        </div>
+        <a href="/logout" class="logout">Çıkış Yap</a>
+    </div>
+
+    <div class="content">
+        {% if aktif_sayfa == 'ozet' %}
+        <div class="cards">
+            <div class="card">
+                <h3>Toplam Randevu</h3>
+                <p>{{ count }}</p>
+            </div>
+            <div class="card">
+                <h3>Tahmini Ciro</h3>
+                <p style="color: #27ae60;">₺{{ earnings }}</p>
+            </div>
+            <div class="card">
+                <h3>Aktif Hizmetler</h3>
+                <p>{{ services|length }}</p>
+            </div>
+        </div>
+        <div class="box">
+            <div class="box-header">📊 Hizmet Satış Grafiği</div>
+            <div class="chart-container">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+        <script>
+            const ctx = document.getElementById('myChart');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: {{ labels | tojson }},
+                    datasets: [{
+                        label: 'Alınan Randevu Sayısı',
+                        data: {{ data | tojson }},
+                        backgroundColor: '#00cec9',
+                        borderRadius: 5
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+        </script>
+        {% endif %}
+
+        {% if aktif_sayfa == 'ekle' %}
+        <div class="forms-grid">
+            <div class="box">
+                <div class="box-header">✂️ Yeni Hizmet Ekle</div>
+                <form class="mini-form" action="/admin/add_service" method="POST">
+                    <input type="text" name="icon" placeholder="İkon Seç (Örn: 🧘)" required>
+                    <input type="text" name="name" placeholder="Hizmet Adı (Örn: Pilates)" required>
+                    <input type="text" name="desc" placeholder="Kısa Açıklama" required>
+                    <button type="submit" class="btn-add">Hizmeti Kaydet</button>
+                </form>
+            </div>
+            <div class="box">
+                <div class="box-header">👨‍💼 Yeni Uzman Ekle</div>
+                <form class="mini-form" action="/admin/add_professional" method="POST">
+                    <select name="service_id" required>
+                        <option value="" disabled selected>Hangi Hizmet İçin?</option>
+                        {% for s in services %}
+                        <option value="{{ s.id }}">{{ s.icon }} {{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="name" placeholder="Uzman Adı (Örn: Mehmet Hoca)" required>
+                    <button type="submit" class="btn-add" style="background: #a29bfe;">Uzmanı Kaydet</button>
+                </form>
+            </div>
+        </div>
+        <div class="box">
+            <div class="box-header">🏷️ Mevcut Hizmet Listesi (Silme İşlemleri)</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="60">İkon</th>
+                        <th>Hizmet Adı</th>
+                        <th>Açıklama</th>
+                        <th style="text-align:right;">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in services %}
+                    <tr>
+                        <td style="font-size:24px;">{{ s.icon }}</td>
+                        <td><strong>{{ s.name }}</strong></td>
+                        <td style="color:#777;">{{ s.desc }}</td>
+                        <td align="right"><a href="/admin/delete_service/{{ s.id }}" class="btn-sm red" onclick="return confirm('Silmek istediğine emin misin?');">Kaldır</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if aktif_sayfa == 'randevular' %}
+        <div class="box">
+            <div class="box-header">📅 Randevu Takvimi</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Durum</th>
+                        <th>Hizmet Bilgisi</th>
+                        <th>Müşteri Adı</th>
+                        <th>Telefon</th> <th>Tarih / Saat</th>
+                        <th>Yönetim</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in appointments %}
+                    <tr>
+                        <td>
+                            {% if app.status == 'Tamamlandı' %}
+                            <span class="badge b-done">Tamamlandı</span>
+                            {% else %}
+                            <span class="badge b-wait">Bekliyor</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ app.service_name }}</strong><br>
+                            <span style="font-size:12px; color:#747d8c;">{{ app.professional_name }}</span>
+                        </td>
+                        <td>{{ app.customer_name }}</td>
+                        <td>{{ app.phone }}</td> <td>{{ app.date }}</td>
+                        <td>
+                            <a href="/admin/toggle_status/{{ app.id }}" class="btn-sm blue" title="Durumu Değiştir">✔</a>
+                            <a href="/delete/{{ app.id }}" class="btn-sm red" onclick="return confirm('Bu randevuyu silmek istediğine emin misin?');">Sil</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" style="text-align:center; padding:20px; color:#ccc;">Henüz randevu alınmamış.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if aktif_sayfa == 'yorumlar' %}
+        <div class="box">
+            <div class="box-header">💬 Gelen Müşteri Yorumları</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hizmet</th>
+                        <th>Puan</th>
+                        <th>Yorum Metni</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rev in reviews %}
+                    <tr>
+                        <td><strong>{{ rev.service.name }}</strong></td>
+                        <td style="color:orange;">
+                            {% for i in range(rev.rating) %}★{% endfor %}
+                        </td>
+                        <td style="font-style:italic; color:#57606f;">"{{ rev.comment }}"</td>
+                        <td><a href="/admin/delete_review/{{ rev.id }}" class="btn-sm red" onclick="return confirm('Yorumu silmek istiyor musun?');">Sil</a></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="text-align:center; padding:20px; color:#ccc;">Henüz yorum yok.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Randevu Sistemi</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; }
+        
+        /* HEADER */
+        header { background-color: #1a237e; color: white; padding: 50px 20px; text-align: center; position: relative; }
+        h1 { margin: 0; font-size: 2.8em; letter-spacing: 1px; }
+        p { opacity: 0.9; font-size: 1.2em; margin-top: 10px; }
+        
+        .my-apps-btn { 
+            position: absolute; top: 20px; right: 20px; 
+            background: white; color: #1a237e; 
+            padding: 10px 25px; border-radius: 30px; 
+            text-decoration: none; font-weight: bold; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.3s;
+        }
+        .my-apps-btn:hover { transform: scale(1.05); }
+
+        /* HİZMETLER (GRID 3'lü) */
+        .container { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 30px; 
+            max-width: 1100px; 
+            margin: -40px auto 50px; 
+            padding: 20px; 
+            position: relative;
+        }
+
+        .card { 
+            background: white; border-radius: 15px; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            padding: 30px 20px; text-align: center; transition: 0.3s; 
+            border-bottom: 5px solid #1a237e;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+        }
+        .card:hover { transform: translateY(-10px); }
+        .icon { font-size: 60px; margin-bottom: 15px; display: block; }
+        .card h2 { color: #1a237e; margin: 10px 0; font-size: 1.6em; }
+        .card p { color: #555; font-size: 0.95em; line-height: 1.5; margin-bottom: 20px; }
+        
+        .btn { background-color: #1a237e; color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; font-weight: bold; transition: 0.3s; display: inline-block; }
+        .btn:hover { background-color: #0d1440; }
+
+        /* YORUMLAR ALANI (YENİ) */
+        .reviews-section {
+            background-color: #e8eaf6; /* Çok açık lacivert/gri */
+            padding: 50px 20px;
+            margin-top: 50px;
+            text-align: center;
+        }
+        .reviews-title { color: #1a237e; font-size: 2em; margin-bottom: 30px; }
+        
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        
+        .review-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            text-align: left;
+            border-left: 4px solid #fbc02d; /* Sarı şerit */
+        }
+        .review-rating { color: #fbc02d; font-size: 1.2em; margin-bottom: 10px; }
+        .review-service { 
+            display: inline-block; background: #1a237e; color: white; 
+            padding: 3px 8px; border-radius: 4px; font-size: 0.8em; margin-bottom: 10px; 
+        }
+        .review-text { font-style: italic; color: #555; }
+
+        
+    .appointment-container {
+        font-family: Arial, sans-serif;
+        max-width: 500px;
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+    }
+
+    .time-slots-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* Yan yana 3 kutu */
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .time-slot-btn {
+        padding: 10px;
+        border: 1px solid #007bff;
+        background-color: white;
+        color: #007bff;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: bold;
+    }
+
+    .time-slot-btn:hover {
+        background-color: #e7f1ff;
+    }
+
+    /* Seçili olduğunda alacağı stil */
+    .time-slot-btn.selected {
+        background-color: #007bff;
+        color: white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    #selectionDisplay {
+        margin-top: 15px;
+        font-size: 0.9rem;
+        color: #555;
+        text-align: center;
+    }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/randevularim" class="my-apps-btn">📅 Randevularım</a>
+    <h1>Çoklu Hizmet Platformu</h1>
+    <p>İhtiyacınız olan uzmanı seçin, randevunuzu hemen oluşturun.</p>
+</header>
+
+<div class="container">
+    {% for s in services %}
+    <div class="card">
+        <span class="icon">{{ s.icon }}</span>
+        <h2>{{ s.name }}</h2>
+        <p>{{ s.desc }}</p>
+        <a href="/service/{{ s.id }}" class="btn">Randevu Al</a>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="reviews-section">
+    <h2 class="reviews-title">📢 Kullanıcı Deneyimleri</h2>
+    <div class="reviews-grid">
+        {% for r in reviews %}
+        <div class="review-card">
+            <div class="review-rating">
+                {% for i in range(r.rating) %}★{% endfor %}
+            </div>
+            <span class="review-service">{{ r.service.name }} Hizmeti</span>
+            <p class="review-text">"{{ r.comment }}"</p>
+        </div>
+        {% else %}
+        <p style="grid-column: 1 / -1; color:#777;">Henüz yorum yapılmamış. İlk yorumu siz yapın!</p>
+        {% endfor %}
+    </div>
+</div>
+<script>
+    // --- YENİ TARİH VE SAAT SİSTEMİ (DROPDOWN) ---
+
+    const dateSelect = document.getElementById('dateSelect');
+    const timeSelect = document.getElementById('timeSelect');
+
+    // --- AYARLAR ---
+    const baslangicGunOteleme = 24; // Bugünden kaç gün sonra başlasın?
+    const gosterilecekGunSayisi = 15; // Listede kaç gün görünsün?
+    const mesaiBaslama = 8; // 08:00
+    const mesaiBitis = 17;  // 17:00
+
+    // 1. TARİHLERİ OLUŞTUR
+    function populateDates() {
+        if(!dateSelect) return; 
+
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() + baslangicGunOteleme);
+
+        for (let i = 0; i < gosterilecekGunSayisi; i++) {
+            let tempDate = new Date(startDate);
+            tempDate.setDate(startDate.getDate() + i);
+
+            // Görünen Metin: "12 Ocak 2026 Pazartesi"
+            let gorunenTarih = tempDate.toLocaleDateString('tr-TR', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric', 
+                weekday: 'long' 
+            });
+
+            // Value Değeri: "2026-01-12"
+            let yil = tempDate.getFullYear();
+            let ay = (tempDate.getMonth() + 1).toString().padStart(2, '0');
+            let gun = tempDate.getDate().toString().padStart(2, '0');
+            let valueTarih = `${yil}-${ay}-${gun}`;
+
+            let option = document.createElement('option');
+            option.value = valueTarih;
+            option.text = gorunenTarih;
+            dateSelect.appendChild(option);
+        }
+    }
+
+    // 2. SAATLERİ OLUŞTUR
+    function populateTimes() {
+        if(!timeSelect) return;
+
+        for (let i = mesaiBaslama; i < mesaiBitis; i++) {
+            let hour = i < 10 ? '0' + i : i;
+            let timeLabel = `${hour}:00 - ${hour}:45`;
+
+            let option = document.createElement('option');
+            option.value = timeLabel;
+            option.text = timeLabel;
+            timeSelect.appendChild(option);
+        }
+    }
+
+    // Sayfa açıldığında çalıştır
+    populateDates();
+    populateTimes();
+</script>
+       
+
+</body> </html>
+<div style="margin-top: 50px; padding: 30px; background: #2f3542; color: white; text-align: center; font-family: sans-serif;">
+    <p style="margin: 0; font-size: 14px;">&copy; 2025 Randevu Sistemi | Tüm Hakları Saklıdır.</p>
+    <br>
+    <a href="/admin" style="color: #57606f; text-decoration: none; font-size: 12px; border: 1px solid #57606f; padding: 5px 10px; border-radius: 4px;">
+        ⚙️ Yönetici Paneli
+    </a>
+</div>
+</body>
+</html>
+ 
